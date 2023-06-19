@@ -1,150 +1,73 @@
-import React, { useState } from "react";
-import AnalyticsDashboard from "./AnalyticsDashboard";
-import Timer from "./Timer";
-import "./TaskManagement.css"; // Import CSS file for styling
+import React, { useState } from 'react';
+import AddUserForm from './AddUserForm';
+import UserList from './UserList';
+import EditUserForm from './EditUserForm';
+import 'tailwindcss/tailwind.css';
 
-const TaskManagement = () => {
-  const [tasks, setTasks] = useState([]);
-  const [newTask, setNewTask] = useState({
-    title: "",
-    description: "",
-    dueDate: "",
-    tomatoes: 0,
-    completed: false,
-  });
+const App = () => {
+  const [users, setUsers] = useState([]);
+  const [editing, setEditing] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const handleInputChange = (event) => {
-    setNewTask({
-      ...newTask,
-      [event.target.name]: event.target.value,
-    });
+  const addUser = (user) => {
+    // Generate a unique ID for the new user
+    user.id = Date.now();
+
+    // Add the new user to the users state
+    setUsers([...users, user]);
   };
 
-  const handleAddTask = () => {
-    setTasks([...tasks, newTask]);
-    setNewTask({
-      title: "",
-      description: "",
-      dueDate: "",
-      tomatoes: 0,
-      completed: false,
-    });
+  const deleteUser = (userId) => {
+    // Filter out the user with the given ID
+    const updatedUsers = users.filter((user) => user.id !== userId);
+
+    // Update the users state
+    setUsers(updatedUsers);
   };
 
-  const handleDeleteTask = (index) => {
-    const updatedTasks = [...tasks];
-    updatedTasks.splice(index, 1);
-    setTasks(updatedTasks);
+  const editUser = (userId) => {
+    // Find the user with the given ID
+    const user = users.find((user) => user.id === userId);
+
+    // Set the currentUser state to the found user
+    setCurrentUser(user);
+    setEditing(true);
   };
 
-  const handleCompleteTask = (index) => {
-    const updatedTasks = [...tasks];
-    updatedTasks[index].completed = true;
-    setTasks(updatedTasks);
-  };
+  const updateUser = (updatedUser) => {
+    // Map through the users state and update the user with the matching ID
+    const updatedUsers = users.map((user) =>
+      user.id === updatedUser.id ? updatedUser : user
+    );
 
-  const handleTimerComplete = (index) => {
-    const updatedTasks = [...tasks];
-    const completedTask = updatedTasks[index];
-
-    // Update the task's tomatoes count
-    completedTask.tomatoes += 1;
-
-    // Start a break session after completing a work session
-    const breakTask = {
-      title: "Break",
-      description: "Take a short break",
-      dueDate: "",
-      tomatoes: 0,
-      completed: false,
-    };
-
-    // Insert the break task after the completed task
-    updatedTasks.splice(index + 1, 0, breakTask);
-
-    setTasks(updatedTasks);
-  };
-
-  const sortTasksByDueDate = () => {
-    const sortedTasks = [...tasks].sort((a, b) => {
-      if (a.dueDate < b.dueDate) return -1;
-      if (a.dueDate > b.dueDate) return 1;
-      return 0;
-    });
-    setTasks(sortedTasks);
-  };
-
-  const filterCompletedTasks = () => {
-    const filteredTasks = tasks.filter((task) => task.completed);
-    setTasks(filteredTasks);
+    // Update the users state and reset the editing state
+    setUsers(updatedUsers);
+    setEditing(false);
+    setCurrentUser(null);
   };
 
   return (
-    <div className="task-management">
-      <h1>Task Management</h1>
-      <div className="task-form">
-        <label>Title:</label>
-        <input
-          type="text"
-          name="title"
-          value={newTask.title}
-          onChange={handleInputChange}
-        />
-        <label>Description:</label>
-        <textarea
-          name="description"
-          value={newTask.description}
-          onChange={handleInputChange}
-        />
-        <label>Due Date:</label>
-        <input
-          type="date"
-          name="dueDate"
-          value={newTask.dueDate}
-          onChange={handleInputChange}
-        />
-        <label>Tomatoes:</label>
-        <input
-          type="number"
-          name="tomatoes"
-          value={newTask.tomatoes}
-          onChange={handleInputChange}
-        />
-        <button onClick={handleAddTask}>Add Task</button>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">User Management Application</h1>
+      <div className="flex justify-between">
+        {editing ? (
+          <div className="w-1/4 mr-4">
+            <h2 className="text-3xl font-semibold mb-4">Edit User</h2>
+            <EditUserForm user={currentUser} updateUser={updateUser} />
+          </div>
+        ) : (
+          <div className="w-1/4 mr-0">
+            <h2 className="text-3xl font-semibold mb-4">Add User</h2>
+            <AddUserForm addUser={addUser} />
+          </div>
+        )}
+        <div className="w-1/2">
+          <h2 className="text-3xl font-semibold mb-4">Users</h2>
+          <UserList users={users} deleteUser={deleteUser} editUser={editUser} />
+        </div>
       </div>
-
-      <div className="task-actions">
-        <button onClick={sortTasksByDueDate}>Sort by Due Date</button>
-        <button onClick={() => setTasks([])}>Clear All Tasks</button>
-        <button onClick={filterCompletedTasks}>Filter Completed Tasks</button>
-      </div>
-
-      <h2>Tasks</h2>
-      <ul className="task-list">
-        {tasks.map((task, index) => (
-          <li key={index} className="task-item">
-            <h3>{task.title}</h3>
-            <p>{task.description}</p>
-            <p>Due Date: {task.dueDate}</p>
-            <p>Tomatoes: {task.tomatoes}</p>
-            {!task.completed ? (
-              <Timer onTimerComplete={() => handleTimerComplete(index)} />
-            ) : (
-              <p>Completed</p>
-            )}
-            {!task.completed && (
-              <button onClick={() => handleCompleteTask(index)}>
-                Complete
-              </button>
-            )}
-            <button onClick={() => handleDeleteTask(index)}>Delete</button>
-          </li>
-        ))}
-      </ul>
-
-      <AnalyticsDashboard tasks={tasks} />
     </div>
   );
 };
 
-export default TaskManagement;
+export default App;
